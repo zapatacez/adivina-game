@@ -13,7 +13,15 @@
     #back-btn { position: absolute; top: 20px; left: 20px; font-size: 24px; background: none; border: none; color: #ff6b6b; cursor: pointer; }
     #start-btn { padding: 10px 20px; font-size: 18px; background: #ff6b6b; border: none; color: white; cursor: pointer; }
     #start-btn:hover { background: #ff8787; }
-    .feedback { font-size: 80px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .feedback { font-size: 80px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; }
+    .card { background: #007bff; padding: 20px; border-radius: 10px; text-align: center; }
+    .countdown { font-size: 60px; color: white; }
+    .results { background: #007bff; text-align: center; padding: 20px; border-radius: 10px; }
+    .results h1 { font-size: 36px; }
+    .results ul { list-style: none; padding: 0; }
+    .results li { font-size: 24px; margin: 10px 0; }
+    .results button { padding: 10px 20px; font-size: 18px; background: #ff6b6b; border: none; color: white; cursor: pointer; margin-top: 20px; }
+    .results button:hover { background: #ff8787; }
   </style>
 </head>
 <body>
@@ -25,9 +33,14 @@
   <button id="start-btn">Empezar</button>
 
   <script>
+    // Audio setup
+    const correctSound = new Audio('https://www.myinstants.com/media/sounds/success-fanfare-trumpets-618848681.mp3'); // Example success sound
+    const passSound = new Audio('https://www.myinstants.com/media/sounds/error-2-45852.mp3'); // Example error sound
+    const countdownSound = new Audio('https://www.myinstants.com/media/sounds/beep-1-803.mp3'); // Example beep
+
     const categories = {
       comida: ["taco", "salsa", "paella", "arepa"],
-      animales: ["gato", "perro", "tigre", "ballena"],
+      animales: ["gato", "perro", "tigre", "ballena", "skunk", "raccoon", "louse", "hornet", "hyena", "caterpillar", "gull", "otter", "horse"],
       cine: ["Star Wars", "Titanic", "Avatar", "Coco"],
       deportes: ["fútbol", "baloncesto", "tenis", "natación"],
       lugares: ["París", "Tokio", "Nueva York", "Río"],
@@ -39,6 +52,7 @@
     const scoreDisplay = document.getElementById("score");
     const debugDisplay = document.getElementById("debug");
     const startBtn = document.getElementById("start-btn");
+    const backBtn = document.getElementById("back-btn");
     const body = document.body;
 
     let currentWords = [];
@@ -50,7 +64,7 @@
 
     // Get category from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const category = urlParams.get("cat") || "comida";
+    const category = urlParams.get("cat") || "animales";
     currentWords = categories[category];
 
     startBtn.addEventListener("click", () => {
@@ -67,8 +81,22 @@
 
     function startCountdown() {
       startBtn.style.display = "none";
-      wordDisplay.textContent = "Pon el iPhone en tu frente";
-      setTimeout(startGame, 3000);
+      wordDisplay.textContent = "3";
+      wordDisplay.classList.add("countdown");
+      let count = 3;
+      const countdown = setInterval(() => {
+        count--;
+        if (count > 0) {
+          wordDisplay.textContent = count;
+          countdownSound.play();
+        } else {
+          wordDisplay.textContent = "¡Go!";
+          setTimeout(() => {
+            startGame();
+          }, 1000);
+          clearInterval(countdown);
+        }
+      }, 1000);
     }
 
     function startGame() {
@@ -79,8 +107,9 @@
       scoreDisplay.textContent = `Puntos: ${score}`;
       timerDisplay.textContent = timeLeft;
       wordDisplay.textContent = currentWords[currentWordIdx];
+      wordDisplay.classList.remove("countdown", "feedback");
       wordDisplay.style.color = "white";
-      body.style.background = "#222";
+      body.style.background = "#007bff"; // Blue background for regular cards
       timer = setInterval(updateTimer, 1000);
       window.addEventListener("devicemotion", handleTilt);
     }
@@ -89,11 +118,7 @@
       timeLeft--;
       timerDisplay.textContent = timeLeft;
       if (timeLeft <= 0) {
-        clearInterval(timer);
-        wordDisplay.textContent = "¡Tiempo terminado!";
-        body.style.background = "#222";
-        window.removeEventListener("devicemotion", handleTilt);
-        startBtn.style.display = "block";
+        endGame();
       }
     }
 
@@ -109,19 +134,23 @@
 
       if (z > 10) { // Tilt down = correct
         tiltState = "correct";
-        body.style.background = "green";
-        wordDisplay.textContent = "¡CORRECTO!";
+        body.style.background = "#28a745"; // Green for correct
+        wordDisplay.textContent = currentWords[currentWordIdx]; // Keep the word
         wordDisplay.classList.add("feedback");
+        wordDisplay.style.color = "white";
+        correctSound.play();
         score++;
         scoreDisplay.textContent = `Puntos: ${score}`;
-        timeLeft = 60;
+        timeLeft = 60; // Reset timer
         timerDisplay.textContent = timeLeft;
         setTimeout(resetTilt, 1000); // 1-second delay
       } else if (z < -10) { // Tilt back = pass
         tiltState = "pass";
-        body.style.background = "red";
-        wordDisplay.textContent = "PASAR";
+        body.style.background = "#dc3545"; // Red for pass
+        wordDisplay.textContent = currentWords[currentWordIdx]; // Keep the word
         wordDisplay.classList.add("feedback");
+        wordDisplay.style.color = "white";
+        passSound.play();
         setTimeout(resetTilt, 1000); // 1-second delay
       }
     }
@@ -129,14 +158,53 @@
     function resetTilt() {
       nextWord();
       tiltState = "neutral";
-      body.style.background = "#222";
+      body.style.background = "#007bff"; // Back to blue
       wordDisplay.classList.remove("feedback");
       wordDisplay.style.color = "white";
     }
 
     function nextWord() {
-      currentWordIdx = (currentWordIdx + 1) % currentWords.length;
-      wordDisplay.textContent = currentWords[currentWordIdx];
+      currentWordIdx++;
+      if (currentWordIdx < currentWords.length) {
+        wordDisplay.textContent = currentWords[currentWordIdx];
+      } else {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      clearInterval(timer);
+      window.removeEventListener("devicemotion", handleTilt);
+      showResults();
+    }
+
+    function showResults() {
+      body.style.background = "#007bff";
+      wordDisplay.innerHTML = `
+        <div class="results">
+          <h1>¡Lograste ${score} cartas!</h1>
+          <ul>
+            ${currentWords.map(word => `<li>${word}</li>`).join('')}
+          </ul>
+          <button onclick="restartGame()">Jugar Este Mazo Otra Vez</button>
+          <button onclick="window.location.href='index.html'">Todos los Mazos</button>
+        </div>
+      `;
+      backBtn.style.display = "none";
+      scoreDisplay.style.display = "none";
+      timerDisplay.style.display = "none";
+      debugDisplay.style.display = "none";
+    }
+
+    function restartGame() {
+      currentWordIdx = 0;
+      score = 0;
+      timeLeft = 60;
+      startGame();
+      backBtn.style.display = "block";
+      scoreDisplay.style.display = "block";
+      timerDisplay.style.display = "block";
+      debugDisplay.style.display = "block";
     }
   </script>
 </body>
