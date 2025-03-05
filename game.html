@@ -11,14 +11,17 @@
     #score { font-size: 20px; }
     #debug { font-size: 16px; }
     #back-btn { position: absolute; top: 20px; left: 20px; font-size: 24px; background: none; border: none; color: #ff6b6b; cursor: pointer; }
+    #start-btn { padding: 10px 20px; font-size: 18px; background: #ff6b6b; border: none; color: white; cursor: pointer; }
+    #start-btn:hover { background: #ff8787; }
   </style>
 </head>
 <body>
-  <button id="back-btn" onclick="window.location.href='index.html'">&lt;</button>
-  <div id="word">¡Empieza!</div>
+  <button id="back-btn" onclick="window.location.href='index.html'"><</button>
+  <div id="word">¡Toca para empezar!</div>
   <div id="timer">60</div>
   <div id="score">Puntos: 0</div>
   <div id="debug">Z: 0</div>
+  <button id="start-btn">Empezar</button>
 
   <script>
     const categories = {
@@ -34,6 +37,7 @@
     const timerDisplay = document.getElementById("timer");
     const scoreDisplay = document.getElementById("score");
     const debugDisplay = document.getElementById("debug");
+    const startBtn = document.getElementById("start-btn");
 
     let currentWords = [];
     let currentWordIdx = 0;
@@ -47,15 +51,22 @@
     const category = urlParams.get("cat") || "comida";
     currentWords = categories[category];
 
-    // Start game automatically
-    if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
-      DeviceMotionEvent.requestPermission()
-        .then(permission => {
-          if (permission === "granted") startGame();
-        })
-        .catch(console.error);
-    } else {
-      startGame();
+    startBtn.addEventListener("click", () => {
+      if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
+        DeviceMotionEvent.requestPermission()
+          .then(permission => {
+            if (permission === "granted") startCountdown();
+          })
+          .catch(console.error);
+      } else {
+        startCountdown();
+      }
+    });
+
+    function startCountdown() {
+      startBtn.style.display = "none";
+      wordDisplay.textContent = "Pon el iPhone en tu frente";
+      setTimeout(startGame, 3000); // 3-second delay
     }
 
     function startGame() {
@@ -78,6 +89,7 @@
         clearInterval(timer);
         wordDisplay.textContent = "¡Tiempo terminado!";
         window.removeEventListener("devicemotion", handleTilt);
+        startBtn.style.display = "block";
       }
     }
 
@@ -85,7 +97,6 @@
       const z = event.accelerationIncludingGravity.z;
       debugDisplay.textContent = `Z: ${z.toFixed(2)}`;
 
-      // Dead zone: ignore small tilts
       if (z > -10 && z < 10 && tiltState !== "neutral") {
         if (tiltState === "correct" || tiltState === "pass") {
           nextWord();
