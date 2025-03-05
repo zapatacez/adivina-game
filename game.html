@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Juego - ¡Adivina, Fam!</title>
+  <style>
+    body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #222; color: #fff; font-family: Arial; }
+    #word { font-size: 60px; text-align: center; }
+    #timer { font-size: 24px; margin-top: 10px; }
+    #score { font-size: 20px; }
+    #debug { font-size: 16px; }
+    #back-btn { position: absolute; top: 20px; left: 20px; font-size: 24px; background: none; border: none; color: #ff6b6b; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <button id="back-btn" onclick="window.location.href='index.html'">&lt;</button>
+  <div id="word">¡Empieza!</div>
+  <div id="timer">60</div>
+  <div id="score">Puntos: 0</div>
+  <div id="debug">Z: 0</div>
+
+  <script>
+    const categories = {
+      comida: ["taco", "salsa", "paella", "arepa"],
+      animales: ["gato", "perro", "tigre", "ballena"],
+      cine: ["Star Wars", "Titanic", "Avatar", "Coco"],
+      deportes: ["fútbol", "baloncesto", "tenis", "natación"],
+      lugares: ["París", "Tokio", "Nueva York", "Río"],
+      música: ["guitarra", "piano", "batería", "saxofón"]
+    };
+
+    const wordDisplay = document.getElementById("word");
+    const timerDisplay = document.getElementById("timer");
+    const scoreDisplay = document.getElementById("score");
+    const debugDisplay = document.getElementById("debug");
+
+    let currentWords = [];
+    let currentWordIdx = 0;
+    let score = 0;
+    let timeLeft = 60;
+    let timer;
+    let tiltState = "neutral";
+
+    // Get category from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const category = urlParams.get("cat") || "comida";
+    currentWords = categories[category];
+
+    // Start game automatically
+    if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
+      DeviceMotionEvent.requestPermission()
+        .then(permission => {
+          if (permission === "granted") startGame();
+        })
+        .catch(console.error);
+    } else {
+      startGame();
+    }
+
+    function startGame() {
+      currentWordIdx = 0;
+      score = 0;
+      timeLeft = 60;
+      tiltState = "neutral";
+      scoreDisplay.textContent = `Puntos: ${score}`;
+      timerDisplay.textContent = timeLeft;
+      wordDisplay.textContent = currentWords[currentWordIdx];
+      wordDisplay.style.color = "white";
+      timer = setInterval(updateTimer, 1000);
+      window.addEventListener("devicemotion", handleTilt);
+    }
+
+    function updateTimer() {
+      timeLeft--;
+      timerDisplay.textContent = timeLeft;
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        wordDisplay.textContent = "¡Tiempo terminado!";
+        window.removeEventListener("devicemotion", handleTilt);
+      }
+    }
+
+    function handleTilt(event) {
+      const z = event.accelerationIncludingGravity.z;
+      debugDisplay.textContent = `Z: ${z.toFixed(2)}`;
+
+      // Dead zone: ignore small tilts
+      if (z > -10 && z < 10 && tiltState !== "neutral") {
+        if (tiltState === "correct" || tiltState === "pass") {
+          nextWord();
+          tiltState = "neutral";
+          wordDisplay.style.color = "white";
+        }
+        return;
+      }
+
+      if (tiltState !== "neutral") return;
+
+      if (z > 10) { // Tilt down = correct
+        tiltState = "correct";
+        wordDisplay.style.color = "green";
+        wordDisplay.textContent = "¡CORRECTO!";
+        score++;
+        scoreDisplay.textContent = `Puntos: ${score}`;
+        timeLeft = 60; // Reset timer
+        timerDisplay.textContent = timeLeft;
+      } else if (z < -10) { // Tilt back = pass
+        tiltState = "pass";
+        wordDisplay.style.color = "red";
+        wordDisplay.textContent = "PASAR";
+      }
+    }
+
+    function nextWord() {
+      currentWordIdx = (currentWordIdx + 1) % currentWords.length;
+      wordDisplay.textContent = currentWords[currentWordIdx];
+    }
+  </script>
+</body>
+</html>
