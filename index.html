@@ -47,7 +47,7 @@
     let score = 0;
     let timeLeft = 60;
     let timer;
-    let isTilting = false; // Lock during feedback
+    let tiltState = "neutral"; // Track state: neutral, correct, pass
 
     startBtn.addEventListener("click", () => {
       if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
@@ -66,9 +66,11 @@
       currentWordIdx = 0;
       score = 0;
       timeLeft = 60;
+      tiltState = "neutral";
       scoreDisplay.textContent = `Puntos: ${score}`;
       timerDisplay.textContent = timeLeft;
       wordDisplay.textContent = currentWords[currentWordIdx];
+      wordDisplay.style.color = "white";
       startBtn.style.display = "none";
       timer = setInterval(updateTimer, 1000);
       window.addEventListener("devicemotion", handleTilt);
@@ -86,31 +88,32 @@
     }
 
     function handleTilt(event) {
-      if (isTilting) return; // Ignore tilts during feedback
-
       const z = event.accelerationIncludingGravity.z;
       debugDisplay.textContent = `Z: ${z.toFixed(2)}`;
 
-      if (z > 3) { // Tilt down = correct
-        isTilting = true;
+      // Dead zone: ignore small tilts
+      if (z > -5 && z < 5 && tiltState !== "neutral") {
+        // Reset to next word when back to neutral
+        if (tiltState === "correct" || tiltState === "pass") {
+          nextWord();
+          tiltState = "neutral";
+          wordDisplay.style.color = "white";
+        }
+        return;
+      }
+
+      if (tiltState !== "neutral") return; // Lock until reset
+
+      if (z > 5) { // Tilt down = correct
+        tiltState = "correct";
         wordDisplay.style.color = "green";
         wordDisplay.textContent = "¡CORRECTO!";
         score++;
         scoreDisplay.textContent = `Puntos: ${score}`;
-        setTimeout(() => {
-          nextWord();
-          isTilting = false;
-          wordDisplay.style.color = "white";
-        }, 1000); // 1-second delay
-      } else if (z < -3) { // Tilt back = pass
-        isTilting = true;
+      } else if (z < -5) { // Tilt back = pass
+        tiltState = "pass";
         wordDisplay.style.color = "red";
         wordDisplay.textContent = "PASAR";
-        setTimeout(() => {
-          nextWord();
-          isTilting = false;
-          wordDisplay.style.color = "white";
-        }, 1000); // 1-second delay
       }
     }
 
