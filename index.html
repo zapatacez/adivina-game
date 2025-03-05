@@ -12,6 +12,8 @@
     #score { font-size: 20px; }
     button { padding: 10px 20px; font-size: 18px; background: #ff6b6b; border: none; color: white; cursor: pointer; }
     button:hover { background: #ff8787; }
+    #word.correct { color: green; }
+   #word.pass { color: red; }
   </style>
 </head>
 <body>
@@ -23,7 +25,7 @@
   <div id="word">¡Elige y empieza!</div>
   <div id="timer">60</div>
   <div id="score">Puntos: 0</div>
-  <div id="debug">Z: 0</div> <!-- Added for tilt debug -->
+  <div id="debug">Z: 0</div>
   <button id="start-btn">Empezar</button>
 
   <script>
@@ -38,13 +40,14 @@
     const scoreDisplay = document.getElementById("score");
     const categorySelect = document.getElementById("category-select");
     const startBtn = document.getElementById("start-btn");
-    const debugDisplay = document.getElementById("debug"); // Show Z value
+    const debugDisplay = document.getElementById("debug");
 
     let currentWords = [];
     let currentWordIdx = 0;
     let score = 0;
     let timeLeft = 60;
     let timer;
+    let isTilting = false; // Lock during feedback
 
     startBtn.addEventListener("click", () => {
       if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
@@ -83,14 +86,31 @@
     }
 
     function handleTilt(event) {
+      if (isTilting) return; // Ignore tilts during feedback
+
       const z = event.accelerationIncludingGravity.z;
-      debugDisplay.textContent = `Z: ${z.toFixed(2)}`; // Show live Z value
+      debugDisplay.textContent = `Z: ${z.toFixed(2)}`;
+
       if (z > 3) { // Tilt down = correct
+        isTilting = true;
+        wordDisplay.style.color = "green";
+        wordDisplay.textContent = "¡CORRECTO!";
         score++;
         scoreDisplay.textContent = `Puntos: ${score}`;
-        nextWord();
+        setTimeout(() => {
+          nextWord();
+          isTilting = false;
+          wordDisplay.style.color = "white";
+        }, 1000); // 1-second delay
       } else if (z < -3) { // Tilt back = pass
-        nextWord();
+        isTilting = true;
+        wordDisplay.style.color = "red";
+        wordDisplay.textContent = "PASAR";
+        setTimeout(() => {
+          nextWord();
+          isTilting = false;
+          wordDisplay.style.color = "white";
+        }, 1000); // 1-second delay
       }
     }
 
