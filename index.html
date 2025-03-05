@@ -23,6 +23,7 @@
   <div id="word">¡Elige y empieza!</div>
   <div id="timer">60</div>
   <div id="score">Puntos: 0</div>
+  <div id="debug">Z: 0</div> <!-- Added for tilt debug -->
   <button id="start-btn">Empezar</button>
 
   <script>
@@ -37,6 +38,7 @@
     const scoreDisplay = document.getElementById("score");
     const categorySelect = document.getElementById("category-select");
     const startBtn = document.getElementById("start-btn");
+    const debugDisplay = document.getElementById("debug"); // Show Z value
 
     let currentWords = [];
     let currentWordIdx = 0;
@@ -82,11 +84,12 @@
 
     function handleTilt(event) {
       const z = event.accelerationIncludingGravity.z;
-      if (z > 5) { // Tilt down = correct
+      debugDisplay.textContent = `Z: ${z.toFixed(2)}`; // Show live Z value
+      if (z > 3) { // Tilt down = correct
         score++;
         scoreDisplay.textContent = `Puntos: ${score}`;
         nextWord();
-      } else if (z < -5) { // Tilt back = pass
+      } else if (z < -3) { // Tilt back = pass
         nextWord();
       }
     }
