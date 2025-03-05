@@ -133,7 +133,7 @@
 
       if (tiltState !== "neutral") return;
 
-      if (z >= 5 && z <= 15) { // Tilt down range = correct (5 to 15)
+      if (z >= 8 && z <= 15) { // Tilt down range = correct (5 to 15)
         tiltState = "correct";
         body.style.background = "#28a745"; // Green for correct
         wordDisplay.textContent = currentWords[currentWordIdx]; // Keep the word
@@ -145,7 +145,7 @@
         timeLeft = 60; // Reset timer
         timerDisplay.textContent = timeLeft;
         setTimeout(resetTilt, 1000); // 1-second delay
-      } else if (z <= -5 && z >= -15) { // Tilt back range = pass (-5 to -15)
+      } else if (z <= -8 && z >= -15) { // Tilt back range = pass (-5 to -15)
         tiltState = "pass";
         body.style.background = "#dc3545"; // Red for pass
         wordDisplay.textContent = currentWords[currentWordIdx]; // Keep the word
