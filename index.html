@@ -3,124 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>¡Adivina, Dude!</title>
+  <title>¡Adivina, Fam!</title>
   <style>
-    body { margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #222; color: #fff; font-family: Arial; }
-    #category-select { padding: 10px; font-size: 18px; margin-bottom: 20px; }
-    #word { font-size: 60px; text-align: center; }
-    #timer { font-size: 24px; margin-top: 10px; }
-    #score { font-size: 20px; }
-    button { padding: 10px 20px; font-size: 18px; background: #ff6b6b; border: none; color: white; cursor: pointer; }
-    button:hover { background: #ff8787; }
-    #word.correct { color: green; }
-   #word.pass { color: red; }
+    body { margin: 0; display: flex; flex-direction: column; align-items: center; height: 100vh; background: #222; color: #fff; font-family: Arial; }
+    h1 { font-size: 36px; margin: 20px; }
+    .category-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; }
+    .category { width: 120px; height: 120px; background: #ff6b6b; display: flex; align-items: center; justify-content: center; font-size: 20px; text-align: center; cursor: pointer; border-radius: 10px; }
+    .category:hover { background: #ff8787; }
   </style>
 </head>
 <body>
-  <select id="category-select">
-    <option value="comida">Comida</option>
-    <option value="animales">Animales</option>
-    <option value="cine">Cine</option>
-  </select>
-  <div id="word">¡Elige y empieza!</div>
-  <div id="timer">60</div>
-  <div id="score">Puntos: 0</div>
-  <div id="debug">Z: 0</div>
-  <button id="start-btn">Empezar</button>
-
-  <script>
-    const categories = {
-      comida: ["taco", "salsa", "paella", "arepa"],
-      animales: ["gato", "perro", "tigre", "ballena"],
-      cine: ["Star Wars", "Titanic", "Avatar", "Coco"]
-    };
-
-    const wordDisplay = document.getElementById("word");
-    const timerDisplay = document.getElementById("timer");
-    const scoreDisplay = document.getElementById("score");
-    const categorySelect = document.getElementById("category-select");
-    const startBtn = document.getElementById("start-btn");
-    const debugDisplay = document.getElementById("debug");
-
-    let currentWords = [];
-    let currentWordIdx = 0;
-    let score = 0;
-    let timeLeft = 60;
-    let timer;
-    let tiltState = "neutral"; // Track state: neutral, correct, pass
-
-    startBtn.addEventListener("click", () => {
-      if (window.DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
-        DeviceMotionEvent.requestPermission()
-          .then(permission => {
-            if (permission === "granted") startGame();
-          })
-          .catch(console.error);
-      } else {
-        startGame();
-      }
-    });
-
-    function startGame() {
-      currentWords = categories[categorySelect.value];
-      currentWordIdx = 0;
-      score = 0;
-      timeLeft = 60;
-      tiltState = "neutral";
-      scoreDisplay.textContent = `Puntos: ${score}`;
-      timerDisplay.textContent = timeLeft;
-      wordDisplay.textContent = currentWords[currentWordIdx];
-      wordDisplay.style.color = "white";
-      startBtn.style.display = "none";
-      timer = setInterval(updateTimer, 1000);
-      window.addEventListener("devicemotion", handleTilt);
-    }
-
-    function updateTimer() {
-      timeLeft--;
-      timerDisplay.textContent = timeLeft;
-      if (timeLeft <= 0) {
-        clearInterval(timer);
-        wordDisplay.textContent = "¡Tiempo terminado!";
-        window.removeEventListener("devicemotion", handleTilt);
-        startBtn.style.display = "block";
-      }
-    }
-
-    function handleTilt(event) {
-      const z = event.accelerationIncludingGravity.z;
-      debugDisplay.textContent = `Z: ${z.toFixed(2)}`;
-
-      // Dead zone: ignore small tilts
-      if (z > -5 && z < 5 && tiltState !== "neutral") {
-        // Reset to next word when back to neutral
-        if (tiltState === "correct" || tiltState === "pass") {
-          nextWord();
-          tiltState = "neutral";
-          wordDisplay.style.color = "white";
-        }
-        return;
-      }
-
-      if (tiltState !== "neutral") return; // Lock until reset
-
-      if (z > 5) { // Tilt down = correct
-        tiltState = "correct";
-        wordDisplay.style.color = "green";
-        wordDisplay.textContent = "¡CORRECTO!";
-        score++;
-        scoreDisplay.textContent = `Puntos: ${score}`;
-      } else if (z < -5) { // Tilt back = pass
-        tiltState = "pass";
-        wordDisplay.style.color = "red";
-        wordDisplay.textContent = "PASAR";
-      }
-    }
-
-    function nextWord() {
-      currentWordIdx = (currentWordIdx + 1) % currentWords.length;
-      wordDisplay.textContent = currentWords[currentWordIdx];
-    }
-  </script>
+  <h1>¡Adivina, Fam!</h1>
+  <div class="category-container">
+    <div class="category" onclick="window.location.href='game.html?cat=comida'">Comida</div>
+    <div class="category" onclick="window.location.href='game.html?cat=animales'">Animales</div>
+    <div class="category" onclick="window.location.href='game.html?cat=cine'">Cine</div>
+    <div class="category" onclick="window.location.href='game.html?cat=deportes'">Deportes</div>
+    <div class="category" onclick="window.location.href='game.html?cat=lugares'">Lugares</div>
+    <div class="category" onclick="window.location.href='game.html?cat=música'">Música</div>
+  </div>
 </body>
 </html>
